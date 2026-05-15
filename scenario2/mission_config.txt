@@ -1,0 +1,21 @@
+# Mission configuration
+# Scenario 2: Room with internal cube obstacle
+
+# Mapping boundary polygon (x,y in cm)
+boundary_polygon = (0,0),(200,0),(200,200),(0,200)
+
+# Height range (cm)
+min_height_cm = 0
+max_height_cm = 100
+
+# Drone starting position (cm)
+start_x_cm      = 40
+start_y_cm      = 40
+start_height_cm = 50
+
+# Output resolution
+output_resolution_xy = 0
+output_resolution_h  = 0
+
+# Grid resolution (cm)
+map_resolution_cm = 5

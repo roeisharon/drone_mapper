@@ -1,0 +1,21 @@
+# Mission configuration
+# Scenario 1: Small room 200x200 cm, height 0-100 cm
+
+# Mapping boundary polygon (x,y in cm): corners of a 200x200 square
+boundary_polygon = (0,0),(200,0),(200,200),(0,200)
+
+# Height range (cm)
+min_height_cm = 0
+max_height_cm = 100
+
+# Drone starting position (cm)
+start_x_cm      = 100
+start_y_cm      = 100
+start_height_cm = 50
+
+# Output resolution (decimal places after dot) — kept for backwards compatibility
+output_resolution_xy = 0
+output_resolution_h  = 0
+
+# Grid cell size for output map (cm); must match the input map resolution
+map_resolution_cm = 5
