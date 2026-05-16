@@ -4,6 +4,7 @@
 #include <string>
 #include <algorithm>
 #include <set>
+#include <tuple>
 #include <cmath>
 
 #include "IO/ConfigParser.h"
@@ -144,15 +145,49 @@ int main(int argc, char* argv[])
 
     // ── 7. Write output map ───────────────────────────────────────────────────
     const std::vector<dm::MapCell> outputCells = mapBuilder.GetAllCells();
-    const std::filesystem::path outputPath = ioPath / "map_output.txt";
 
-    if (!dm::WriteMapFile(outputPath, groundTruthMap.bounds, outputCells)) {
+    // Augment the output with -1 (NotMapped) and -2 (NotReachable) for every
+    // ground-truth cell the drone did not explicitly record.  This makes the
+    // output file show the full mapping picture including unreachable cells
+    // inside the boundary and cells outside the mapping boundary.
+    std::vector<dm::MapCell> fullOutput = outputCells;
+    {
+        // Build a fast lookup of positions already in the drone's output.
+        std::set<std::tuple<int,int,int>> mapped;
+        for (const auto& c : outputCells) {
+            mapped.emplace(
+                static_cast<int>(std::round(c.x.numerical_value_in(dm::cm))),
+                static_cast<int>(std::round(c.y.numerical_value_in(dm::cm))),
+                static_cast<int>(std::round(c.z.numerical_value_in(dm::cm))));
+        }
+        for (const auto& gtCell : groundTruthMap.cells) {
+            const int xi = static_cast<int>(std::round(gtCell.x.numerical_value_in(dm::cm)));
+            const int yi = static_cast<int>(std::round(gtCell.y.numerical_value_in(dm::cm)));
+            const int zi = static_cast<int>(std::round(gtCell.z.numerical_value_in(dm::cm)));
+            if (mapped.count({xi, yi, zi})) continue;
+            const dm::MapValue v = mapBuilder.Get(
+                gtCell.x.numerical_value_in(dm::cm) * dm::x_extent[dm::cm],
+                gtCell.y.numerical_value_in(dm::cm) * dm::y_extent[dm::cm],
+                gtCell.z.numerical_value_in(dm::cm) * dm::z_extent[dm::cm]);
+            if (v == dm::MapValue::NotMapped || v == dm::MapValue::NotReachable) {
+                dm::MapCell cell = gtCell;
+                cell.value = v;
+                fullOutput.push_back(cell);
+            }
+        }
+    }
+
+    const std::filesystem::path outputPath = ioPath / "map_output.txt";
+    if (!dm::WriteMapFile(outputPath, groundTruthMap.bounds, fullOutput)) {
         std::cerr << "Warning: could not write map_output.txt\n";
     } else {
         std::cout << "Output map written to: " << outputPath << "\n";
     }
 
     // ── 8. Score ──────────────────────────────────────────────────────────────
+    // Score uses the raw drone output (outputCells), not the augmented file.
+    // The Score function already ignores -1/-2 entries, so the result is the
+    // same either way; using outputCells keeps the intent explicit.
     const double score = dm::Score(outputCells, groundTruthMap.cells);
     std::cout << "Mapping score: " << score << " / 100\n";
 

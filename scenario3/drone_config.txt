@@ -1,0 +1,18 @@
+# Drone capabilities configuration
+# Scenario 3: L-shaped corridor room
+
+# Drone physical dimensions (cm)
+min_pass_width_cm  = 20
+min_pass_length_cm = 20
+min_pass_height_cm = 20
+
+# Maximum movement per command
+max_rotate_deg  = 45
+max_advance_cm  = 10
+max_elevate_cm  = 10
+
+# Lidar configuration
+lidar_beam_min_cm       = 5
+lidar_beam_max_cm       = 150
+lidar_circle_spacing_cm = 5
+lidar_fov_circles       = 4

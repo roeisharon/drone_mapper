@@ -1,0 +1,31 @@
+# Mission configuration
+# Scenario 3: L-shaped corridor room
+#
+# Physical layout (5 cm resolution, 200x200 bounding box):
+#   Horizontal arm : x=0-200, y=0-100, z=0-100
+#   Vertical arm   : x=0-100, y=0-200, z=0-100
+#   The upper-right quadrant (x>100, y>100) is NOT in the map file —
+#   the walls at y=100 (for x>100) and x=100 (for y>100) act as the
+#   room's inner boundary and block the lidar from seeing past them.
+#
+# The boundary polygon matches the physical L-shape so the drone maps
+# only the two arms and the scoring only counts those cells.
+
+# Mapping boundary polygon (x,y in cm): L-shape
+boundary_polygon = (0,0),(200,0),(200,100),(100,100),(100,200),(0,200)
+
+# Height range (cm)
+min_height_cm = 0
+max_height_cm = 100
+
+# Drone starting position (cm): inside the L corner
+start_x_cm      = 50
+start_y_cm      = 50
+start_height_cm = 50
+
+# Output resolution (decimal places after dot)
+output_resolution_xy = 0
+output_resolution_h  = 0
+
+# Grid cell size for output map (cm); must match the input map resolution
+map_resolution_cm = 5
