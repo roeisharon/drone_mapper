@@ -1,27 +1,26 @@
 # Mission configuration
-# Scenario 4: Two sources of -1 and -2 in the output map.
+# Scenario 4: Solid internal obstacle (produces -1) + height boundary (produces -2)
 #
-# SOURCE OF -2 (NotReachable / outside boundary):
-#   The boundary polygon is inset 5 cm from the outer walls.
-#   The four outer room walls (x=0, x=200, y=0, y=200) fall outside
-#   the polygon and are therefore beyond the mapping boundary.
-#   The drone detects them with lidar but MapBuilder discards the hits.
-#   After post-processing, these cells appear as -2 in map_output.txt.
+# SOURCE OF -1 (NotMapped / unreachable interior):
+#   A solid box fills x=80-120, y=80-120, z=0-100.  The drone can detect and
+#   map the 6 outer faces, but the interior cells (x=85-115, y=85-115, z=5-95)
+#   are hidden behind solid material.  No lidar beam can penetrate solid cells,
+#   so those ~931 cells are never reached → NotMapped (-1) in output.
 #
-# SOURCE OF -1 (NotMapped / unreachable):
-#   A completely sealed hollow box occupies x=80-120, y=80-120.
-#   Its interior (x=85-115, y=85-115) is physically walled off with no
-#   opening — lidar beams cannot penetrate the walls, and the drone has
-#   no path inside.  Those cells remain NotMapped and appear as -1.
+# SOURCE OF -2 (NotReachable / outside mapping boundaries):
+#   The mission height range is z=5-95.  The floor (z=0) and ceiling (z=100)
+#   are outside the drone's mapping boundaries.  The drone's MapBuilder drops
+#   any attempt to record those cells, and Get() returns NotReachable (-2).
+#   All 41×41×2 = 3 362 floor/ceiling cells appear as -2 in the output.
 
-# Mapping boundary polygon (x,y in cm): inset 5 cm from outer walls
-boundary_polygon = (5,5),(195,5),(195,195),(5,195)
+# Mapping boundary polygon (x,y in cm): full room rectangle
+boundary_polygon = (0,0),(200,0),(200,200),(0,200)
 
-# Height range (cm)
-min_height_cm = 0
-max_height_cm = 100
+# Height range (cm): deliberately excludes floor (z=0) and ceiling (z=100)
+min_height_cm = 5
+max_height_cm = 95
 
-# Drone starting position (cm): lower-left area, well clear of the box
+# Drone starting position (cm): lower-left area, clear of the solid box
 start_x_cm      = 50
 start_y_cm      = 50
 start_height_cm = 50

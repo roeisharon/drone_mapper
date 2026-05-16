@@ -1,6 +1,5 @@
 # Drone capabilities configuration
-# Scenario 4: Room with a sealed hollow box (produces -1) and
-#             boundary inset inside outer walls (produces -2)
+# Scenario 4: Solid internal obstacle and height-restricted mapping
 
 # Drone physical dimensions (cm)
 min_pass_width_cm  = 20
