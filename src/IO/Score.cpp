@@ -37,22 +37,26 @@ Key makeKey(const MapCell& c)
 
 // Score formula:
 //
-//   For every cell in the ground-truth map that is Occupied or Empty:
-//     - If the drone mapped it with the correct value → +1 (true positive/negative)
-//     - If the drone mapped it with the wrong value   → 0
-//     - If the drone left it NotMapped                → 0
+//   The output map is expected to contain the augmented full output, which
+//   includes -1 (NotMapped) and -2 (NotReachable) values in addition to the
+//   drone's scanned 0 (Empty) and 1 (Occupied) cells.
 //
-//   score = (correct / total_ground_truth_cells) * 100
+//   For every GT cell with value Occupied or Empty, look up the drone's output:
 //
-//   Additionally, incorrectly mapped cells (drone says Occupied but GT says Empty
-//   and vice-versa) count as penalties: each subtracts 0.5 from the correct count
-//   (clamped to zero).  This discourages the drone from wildly guessing.
+//     Output = correct value (0/1 matching GT) → +1 correct,  counts in total
+//     Output = wrong value   (0/1 not matching) → -0.5 penalty, counts in total
+//     Output = -1 (NotMapped, inside mission)   → -0.5 penalty, counts in total
+//     Output = -2 (NotReachable, outside mission)→ excluded entirely from total
+//     Output = missing from output map           → -0.5 penalty, counts in total
+//
+//   score = max(0, correct - penalty) / total * 100
+
 double Score(const std::vector<MapCell>& mapped,
              const std::vector<MapCell>& groundTruth)
 {
     if (groundTruth.empty()) return 0.0;
 
-    // Build a lookup table from the drone's output
+    // Build a lookup table from the full augmented output (includes -1/-2).
     std::unordered_map<Key, MapValue, KeyHash> mappedMap;
     mappedMap.reserve(mapped.size());
     for (const auto& cell : mapped) {
@@ -64,25 +68,35 @@ double Score(const std::vector<MapCell>& mapped,
     int    total    = 0;
 
     for (const auto& gt : groundTruth) {
-        // Only evaluate cells that are definitively Occupied or Empty in the GT
+        // Only evaluate cells that are definitively Occupied or Empty in the GT.
         if (gt.value != MapValue::Occupied && gt.value != MapValue::Empty) continue;
 
+        auto it = mappedMap.find(makeKey(gt));
+
+        // -2 (NotReachable): cell is outside the mission bounds.
+        // Exclude it entirely — not in numerator, not in denominator.
+        if (it != mappedMap.end() && it->second == MapValue::NotReachable) continue;
+
+        // All other cases count toward the total (denominator).
         ++total;
 
-        auto it = mappedMap.find(makeKey(gt));
         if (it == mappedMap.end()) {
-            // Not mapped – no credit, no penalty
+            // Not present in output at all — treat same as NotMapped.
+            penalty += 0.5;
             continue;
         }
 
         const MapValue dv = it->second;
         if (dv == gt.value) {
+            // Correct classification.
             correct += 1.0;
         } else if (dv == MapValue::Occupied || dv == MapValue::Empty) {
-            // Wrong classification
+            // Wrong classification (0 vs 1 or vice-versa).
+            penalty += 0.5;
+        } else if (dv == MapValue::NotMapped) {
+            // -1: inside mission bounds but drone failed to map it.
             penalty += 0.5;
         }
-        // NotMapped / NotReachable entries get neither credit nor penalty
     }
 
     if (total == 0) return 0.0;

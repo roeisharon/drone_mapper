@@ -3,9 +3,6 @@
 
 namespace dm {
 
-// ---------------------------------------------------------------------------
-// Constructor
-// ---------------------------------------------------------------------------
 MapBuilder::MapBuilder(const MissionConfig& mission)
     : m_mission(mission)
     , m_polygon(m_mission.boundaryPolygon)
@@ -15,9 +12,7 @@ MapBuilder::MapBuilder(const MissionConfig& mission)
     , m_hCellCm (mission.mapResolutionCm)
 {}
 
-// ---------------------------------------------------------------------------
-// IMapBuilder
-// ---------------------------------------------------------------------------
+// IMapBuilder - - Get/Set individual cell values
 MapValue MapBuilder::Get(XLength x, YLength y, ZLength z) const
 {
     if (!IsInBounds(x, y, z)) return MapValue::NotReachable;
@@ -69,9 +64,7 @@ void MapBuilder::Set(XLength x, YLength y, ZLength z, MapValue value)
     }
 }
 
-// ---------------------------------------------------------------------------
 // GetAllCells — collect every recorded cell for file output and scoring
-// ---------------------------------------------------------------------------
 std::vector<MapCell> MapBuilder::GetAllCells() const
 {
     std::vector<MapCell> out;
@@ -88,9 +81,7 @@ std::vector<MapCell> MapBuilder::GetAllCells() const
     return out;
 }
 
-// ---------------------------------------------------------------------------
 // Private helpers
-// ---------------------------------------------------------------------------
 MapBuilder::Key MapBuilder::MakeKey(double xCm, double yCm, double zCm) const
 {
     return {

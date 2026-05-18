@@ -25,7 +25,7 @@
 
 int main(int argc, char* argv[])
 {
-    // ── 1. Determine working directory ───────────────────────────────────────
+    //1. Determine working directory 
     std::filesystem::path ioPath =
         (argc >= 2) ? std::filesystem::path(argv[1])
                     : std::filesystem::current_path();
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // ── 2. Load configuration files ──────────────────────────────────────────
+    //2. Load configuration files 
     dm::ErrorLogger logger;
 
     dm::DroneConfig   droneCfg;
@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // ── 3. Load ground-truth map ──────────────────────────────────────────────
+    // 3. Load ground-truth map 
     const dm::ParsedMap groundTruthMap =
         dm::ParseMapFile(ioPath / "map_input.txt", logger);
 
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // ── 4. Validate that the requested map resolution matches the input map ──
+    // 4. Validate that the requested map resolution matches the input map 
     // Assignment note: "You may assume a single supported resolution. Any
     // requested resolution that is not the one supported may yield an error."
     // We detect the actual grid step from the input map and compare against
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    // ── 5. Build simulation objects ───────────────────────────────────────────
+    // 5. Build simulation objects 
     auto simState = std::make_shared<dm::SimulationState>();
     simState->position = {
         missionCfg.startX,
@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
 
     dm::MapBuilder mapBuilder(missionCfg);
 
-    // ── 6. Create and run the drone ───────────────────────────────────────────
+    // 6. Create and run the drone 
     dm::Drone drone(lidarSensor, *positionSensor, movementDriver, mapBuilder);
     dm::MappingAlgorithm algorithm(drone, &droneCfg, &missionCfg);
 
@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
     algorithm.Run();
     std::cout << "Mapping complete.\n";
 
-    // ── 7. Write output map ───────────────────────────────────────────────────
+    // 7. Write output map
     const std::vector<dm::MapCell> outputCells = mapBuilder.GetAllCells();
 
     // Augment the output with -1 (NotMapped) and -2 (NotReachable) for every
@@ -184,14 +184,15 @@ int main(int argc, char* argv[])
         std::cout << "Output map written to: " << outputPath << "\n";
     }
 
-    // ── 8. Score ──────────────────────────────────────────────────────────────
-    // Score uses the raw drone output (outputCells), not the augmented file.
-    // The Score function already ignores -1/-2 entries, so the result is the
-    // same either way; using outputCells keeps the intent explicit.
-    const double score = dm::Score(outputCells, groundTruthMap.cells);
+    // 8. Score 
+    // Score uses the full augmented output (fullOutput), which includes -1 and
+    // -2 values for every GT cell not explicitly scanned by the drone.
+    // -2 cells are excluded from the denominator entirely (outside mission scope).
+    // -1 cells are penalised the same as a wrong classification.
+    const double score = dm::Score(fullOutput, groundTruthMap.cells);
     std::cout << "Mapping score: " << score << " / 100\n";
 
-    // ── 9. Flush any input errors ─────────────────────────────────────────────
+    // 9. Flush any input errors
     logger.FlushToFile(ioPath);
     if (logger.HasErrors()) {
         std::cout << "Input errors were logged to: " << (ioPath / "input_errors.txt") << "\n";

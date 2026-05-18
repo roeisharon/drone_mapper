@@ -13,6 +13,6 @@ max_elevate_cm  = 5
 
 # Lidar configuration
 lidar_beam_min_cm       = 5
-lidar_beam_max_cm       = 80
+lidar_beam_max_cm       = 100
 lidar_circle_spacing_cm = 5
 lidar_fov_circles       = 3

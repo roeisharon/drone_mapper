@@ -1,7 +1,8 @@
 # Drone capabilities configuration
-# Scenario 3: L-shaped corridor room
+# Scenario 3: Asymmetric room with solid interior obstacles
 
 # Drone physical dimensions (cm)
+# Min pass gaps in this scenario: left corridor 40 cm wide, vertical gaps 65+ cm
 min_pass_width_cm  = 20
 min_pass_length_cm = 20
 min_pass_height_cm = 20
@@ -13,6 +14,6 @@ max_elevate_cm  = 10
 
 # Lidar configuration
 lidar_beam_min_cm       = 5
-lidar_beam_max_cm       = 150
+lidar_beam_max_cm       = 120
 lidar_circle_spacing_cm = 5
 lidar_fov_circles       = 4

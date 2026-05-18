@@ -11,9 +11,6 @@
 
 namespace dm {
 
-// ============================================================================
-// Constructor
-// ============================================================================
 MappingAlgorithm::MappingAlgorithm(Drone&               drone,
                                     const DroneConfig*   config,
                                     const MissionConfig* mission)
@@ -81,9 +78,7 @@ MappingAlgorithm::MappingAlgorithm(Drone&               drone,
     }
 }
 
-// ============================================================================
 // Run — descend to minHeight, then climb to maxHeight, scanning each level
-// ============================================================================
 void MappingAlgorithm::Run()
 {
     // Build the list of height levels to visit, covering [minHeight, maxHeight]
@@ -126,7 +121,6 @@ void MappingAlgorithm::Run()
         visitHeight(heights[i]);
 }
 
-// ============================================================================
 // ScanAndUpdate — rotate 360° scanning at each slice; at each heading sweep
 // altitude from below to above for full vertical coverage.
 //
@@ -135,7 +129,6 @@ void MappingAlgorithm::Run()
 // only rotates at the slice granularity. We match the center-beam step to the
 // outer circle's angular density so the two complement each other perfectly.
 // Capped at 64 slices (5.625°) to keep runtime reasonable with large FOVC.
-// ============================================================================
 void MappingAlgorithm::ScanAndUpdate()
 {
     const double maxRotateDeg = m_config
@@ -193,6 +186,9 @@ void MappingAlgorithm::ScanAndUpdate()
     }
 }
 
+// ScanSingleDirection — perform a single lidar scan at the current heading and given altitude angle,
+// and update the map with the results. Mark cells along the beam path as empty until the hit, 
+// or until the max range for misses.
 void MappingAlgorithm::ScanSingleDirection(double altitudeDeg)
 {
     const Orientation scanOri{ 0.0 * deg, altitudeDeg * deg };
@@ -244,9 +240,7 @@ void MappingAlgorithm::ScanSingleDirection(double altitudeDeg)
     }
 }
 
-// ============================================================================
 // ExploreAtCurrentHeight — BFS at the current height slice
-// ============================================================================
 void MappingAlgorithm::ExploreAtCurrentHeight()
 {
     Position3D  curPos  = m_drone.GetLocation();
@@ -286,18 +280,14 @@ void MappingAlgorithm::ExploreAtCurrentHeight()
     }
 }
 
-// ============================================================================
 // ElevateToNextHeight (unused in new Run, kept for compatibility)
-// ============================================================================
 bool MappingAlgorithm::ElevateToNextHeight()
 {
     m_currentHeightLevel += 30;
     return AdjustHeight(m_currentHeightLevel * cm);
 }
 
-// ============================================================================
 // WorldToGrid / GridToWorld
-// ============================================================================
 GridCell3D MappingAlgorithm::WorldToGrid(XLength x, YLength y, ZLength z) const
 {
     return {
@@ -316,9 +306,9 @@ Position3D MappingAlgorithm::GridToWorld(const GridCell3D& cell) const
     };
 }
 
-// ============================================================================
-// IsWalkable / HasClearance
-// ============================================================================
+// IsWalkable / HasClearance 
+// check if the cell is free of obstacles and within boundaries, 
+// and if the drone can fit there with its configured passage dimensions.
 bool MappingAlgorithm::IsWalkable(const GridCell3D& cell) const
 {
     Position3D wp  = GridToWorld(cell);
@@ -358,9 +348,8 @@ bool MappingAlgorithm::HasClearance(const GridCell3D& to) const
         && !occupied(tx,     ty,     tz - r);
 }
 
-// ============================================================================
-// FindPath — A*
-// ============================================================================
+// FindPath — A* - Find a path from the drone's current position to the target cell,
+// avoiding occupied and unreachable cells. Returns an empty path if no valid path exists.
 std::vector<GridCell3D> MappingAlgorithm::FindPath(const GridCell3D& target)
 {
     Position3D startPos = m_drone.GetLocation();
@@ -418,9 +407,8 @@ std::vector<GridCell3D> MappingAlgorithm::FindPath(const GridCell3D& target)
     return {};
 }
 
-// ============================================================================
-// MoveToCell
-// ============================================================================
+// MoveToCell - Move the drone to the target cell by first rotating to face it, then advancing in steps,
+// and finally adjusting height if needed. Returns false if any movement step fails due to collision.
 bool MappingAlgorithm::MoveToCell(const GridCell3D& target)
 {
     Position3D wp = GridToWorld(target);
@@ -450,9 +438,7 @@ bool MappingAlgorithm::MoveToCell(const GridCell3D& target)
     return true;
 }
 
-// ============================================================================
-// RotateToFace
-// ============================================================================
+// RotateToFace - Rotate the drone to face the target (targetX, targetY) from its current position.
 bool MappingAlgorithm::RotateToFace(XLength targetX, YLength targetY)
 {
     Position3D cur = m_drone.GetLocation();
@@ -496,9 +482,7 @@ bool MappingAlgorithm::RotateToFace(XLength targetX, YLength targetY)
     return true;
 }
 
-// ============================================================================
-// AdjustHeight
-// ============================================================================
+// AdjustHeight - Adjust the drone's height to the targetHeight by elevating in steps, checking for collisions.
 bool MappingAlgorithm::AdjustHeight(PhysicalLength targetHeight)
 {
     const double maxElev = m_config
